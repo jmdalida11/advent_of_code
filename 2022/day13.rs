@@ -1,4 +1,5 @@
 use std::fs;
+use std::cmp::Ordering;
 
 fn main() {
     let input = fs::read_to_string("input").expect("Failed to read input file");
@@ -146,7 +147,6 @@ fn solve_part1(input: &str) -> i32 {
         let right_node = parser.parse(pairs[i].1.clone());
         if let Some(ordered) = is_ordered(&left_node, &right_node) {
             if ordered {
-                // println!("Hey {}" , i + 1);
                 ans += i as i32 + 1;
             }
         }
@@ -155,7 +155,46 @@ fn solve_part1(input: &str) -> i32 {
     ans
 }
 
-fn solve_part2(_input: &str) -> i32 {
-    // Implement the solution for part 2
-    0
+fn custom_cmp(left: &Box<Node>, right: &Box<Node>) -> Ordering {
+    if let Some(ordered) = is_ordered(left, right) {
+        if ordered {
+            return Ordering::Less
+        } else {
+            return Ordering::Greater
+        }
+    }
+    return Ordering::Equal;
 }
+
+fn solve_part2(input: &str) -> i32 {
+    let mut parser = Parser::new();
+    let mut nodes: Vec<Box<Node>> = vec![
+        parser.parse("[[2]]".to_string()),
+        parser.parse("[[6]]".to_string())
+    ];
+    for line in input.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        nodes.push(parser.parse(line.trim().to_string()));
+    }
+    
+    nodes.sort_by(|a, b| custom_cmp(a, b));
+
+    let mut idx1 = 0;
+    let mut idx2 = 0;
+    for i in 0..nodes.len() {
+        if nodes[i].children.len() == 1 {
+            let only_child = &nodes[i].children[0];
+            if only_child.is_list && only_child.children.len() == 1 {
+                if only_child.children[0].value == 2 {
+                    idx1 = i as i32 + 1;
+                } else if only_child.children[0].value == 6 {
+                    idx2 = i as i32 + 1;
+                }
+            }
+        }
+    }
+
+    return idx1 * idx2;
+ }
