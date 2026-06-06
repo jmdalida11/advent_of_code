@@ -12,7 +12,23 @@ fn main() {
     println!("Part 2: {}", solve_part2(&input));
 }
 
-fn solve_part1(input: &str) -> i32 {
+fn draw_grid(grid: &Vec<Vec<i32>>) {
+    println!("");
+    for row in grid {
+        for col in row {
+            let c = match *col {
+                0 => '.',
+                1 => '#',
+                2 => 'O',
+                _ => 'X',
+            };
+            print!("{}", c);
+        }
+        println!("");
+    }
+}
+
+fn create_paths_from_input(input: &str) -> (Vec<Vec<Coord>>, i32, i32, i32) {
     let mut max_x = 0;
     let mut max_y = 0;
     let mut min_x = 1000;
@@ -40,9 +56,10 @@ fn solve_part1(input: &str) -> i32 {
         paths.push(path);
     }
 
-    let x_start = min_x - 1;
-    let mut grid: Vec<Vec<i32>> = vec![vec![0; (max_x - min_x) as usize + 3]; max_y as usize + 2];
+    return (paths, max_x, max_y, min_x)
+}
 
+fn fill_grid(grid: &mut Vec<Vec<i32>>, paths: &Vec<Vec<Coord>>, x_start: i32) {
     for path in paths {
         let mut cur = &path[0];
         let mut i = 1;
@@ -62,7 +79,19 @@ fn solve_part1(input: &str) -> i32 {
             i += 1;
         }
     }
+    let n = grid.len();
+    for i in 0..grid[0].len() {
+        grid[n-1][i] = 1;
+    }
+}
 
+fn solve_part1(input: &str) -> i32 {
+    let (paths, max_x, max_y, min_x) = create_paths_from_input(&input);
+
+    let x_start = min_x - 1;
+    let mut grid: Vec<Vec<i32>> = vec![vec![0; (max_x - min_x) as usize + 3]; max_y as usize + 3];
+
+    fill_grid(&mut grid, &paths, x_start);
     draw_grid(&grid);
     
     let pouring_point = Coord {
@@ -75,7 +104,7 @@ fn solve_part1(input: &str) -> i32 {
         let mut cur = pouring_point.clone();
         
         let done = loop {
-            if cur.y > max_y {
+            if cur.y + 1 > max_y {
                 break true;
             }
 
@@ -104,22 +133,46 @@ fn solve_part1(input: &str) -> i32 {
     return ans;
 }
 
-fn draw_grid(grid: &Vec<Vec<i32>>) {
-    println!("");
-    for row in grid {
-        for col in row {
-            let c = match *col {
-                0 => '.',
-                1 => '#',
-                2 => 'O',
-                _ => 'X',
-            };
-            print!("{}", c);
-        }
-        println!("");
-    }
-}
+fn solve_part2(input: &str) -> i32 {
+    let (paths, max_x, max_y, min_x) = create_paths_from_input(&input);
 
-fn solve_part2(_input: &str) -> i32 {
-    return 0;
+    let x_start = min_x - max_y;
+    let mut grid: Vec<Vec<i32>> = vec![vec![0; (max_x - min_x + max_y * 2) as usize + 6]; max_y as usize + 3];
+
+    fill_grid(&mut grid, &paths, x_start);
+    draw_grid(&grid);
+    
+    let pouring_point = Coord {
+        x: 500 - x_start,
+        y: 0,
+    };
+
+    let mut ans = 0;
+    loop {
+        let mut cur = pouring_point.clone();
+        
+        if grid[cur.y as usize][cur.x as usize] != 0 {
+            break;
+        }
+
+        loop {
+            if grid[cur.y as usize + 1][cur.x as usize] == 0 {
+                cur.y += 1;
+            } else if grid[cur.y as usize + 1][cur.x as usize - 1] == 0 {
+                cur.y += 1;
+                cur.x -= 1;
+            } else if grid[cur.y as usize + 1][cur.x as usize + 1] == 0 {
+                cur.y += 1;
+                cur.x += 1;
+            } else {
+                ans += 1;
+                grid[cur.y as usize][cur.x as usize] = 2;
+                break;
+            }
+        };
+    }
+
+    draw_grid(&grid);
+
+    return ans;
 }
